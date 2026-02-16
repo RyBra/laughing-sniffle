@@ -1,0 +1,1 @@
+"""Result writer service package."""

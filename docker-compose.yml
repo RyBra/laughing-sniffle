@@ -1,0 +1,44 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  agent-gateway:
+    build:
+      context: .
+      dockerfile: services/agent_gateway/Dockerfile
+    depends_on:
+      - redis
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      TASK_QUEUE_NAME: inventory_tasks
+      TASK_QUEUE_MAXSIZE: "100"
+      PUT_TIMEOUT_SECONDS: "2.0"
+      GRPC_HOST: 0.0.0.0
+      GRPC_PORT: "50051"
+      LOG_DIR: /app/logs/agent-gateway
+      LOG_LEVEL: info
+    volumes:
+      - ./:/workspace:ro
+      - ./logs:/app/logs
+    ports:
+      - "50051:50051"
+
+  result-writer:
+    build:
+      context: .
+      dockerfile: services/result_writer/Dockerfile
+    depends_on:
+      - redis
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      RESULT_QUEUE_NAME: inventory_results
+      PAYLOAD_PATH: /data/payload.json
+      LOG_DIR: /app/logs/result-writer
+      LOG_LEVEL: info
+    volumes:
+      - ./data:/data
+      - ./logs:/app/logs

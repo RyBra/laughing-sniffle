@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package agent;
+
+message RunRequest {
+  string commands_file = 1;
+}
+
+message RunResponse {
+  bool ok = 1;
+  int32 accepted = 2;
+  string error = 3;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  bool ok = 1;
+  string service = 2;
+}
+
+service AgentGateway {
+  rpc Run(RunRequest) returns (RunResponse);
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+service InventoryService {
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+service ResultWriter {
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
