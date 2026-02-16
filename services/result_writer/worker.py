@@ -40,7 +40,7 @@ def run_writer() -> None:
         _, raw = client.brpop(result_queue_name, timeout=0)
         try:
             message = json.loads(raw)
-        except Exception:  # noqa: BLE001
+        except Exception:
             logging.exception("result writer got malformed payload: %s", raw)
             continue
 
@@ -57,7 +57,7 @@ def run_writer() -> None:
         try:
             write_payload_atomic(payload_path, payload)
             logging.info("payload.json updated at %s", payload_path)
-        except Exception:  # noqa: BLE001
+        except Exception:
             logging.exception("result writer failed to write payload")
 
 

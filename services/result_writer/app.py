@@ -4,11 +4,15 @@ import logging
 import os
 from concurrent import futures
 from pathlib import Path
+from typing import Any, cast
 
 import grpc
 
-from proto import agent_pb2, agent_pb2_grpc
 from legacy.src.agent.logging_setup import setup_logging
+from proto import agent_pb2, agent_pb2_grpc
+
+_agent_pb2 = cast(Any, agent_pb2)
+HealthResponse = _agent_pb2.HealthResponse
 
 
 def _env_str(name: str, default: str) -> str:
@@ -23,11 +27,9 @@ def _env_int(name: str, default: int) -> int:
 
 
 class ResultWriterHealthServicer(agent_pb2_grpc.ResultWriterServicer):
-    def Health(
-        self, request: agent_pb2.HealthRequest, context: grpc.ServicerContext
-    ) -> agent_pb2.HealthResponse:
+    def Health(self, request: Any, context: grpc.ServicerContext) -> Any:
         del request, context
-        return agent_pb2.HealthResponse(ok=True, service="result-writer")
+        return HealthResponse(ok=True, service="result-writer")
 
 
 def serve() -> None:

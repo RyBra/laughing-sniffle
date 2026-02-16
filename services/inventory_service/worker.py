@@ -45,7 +45,7 @@ def run_worker() -> None:
             message = json.loads(raw)
             task_id = str(message.get("task_id", ""))
             command = str(message.get("command", "")).strip().lower()
-        except Exception:  # noqa: BLE001
+        except Exception:
             logging.exception("inventory worker got malformed task: %s", raw)
             continue
 
@@ -61,7 +61,7 @@ def run_worker() -> None:
                 "payload": payload,
                 "ts": datetime.now(timezone.utc).isoformat(),
             }
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logging.exception("inventory collection failed for task_id=%s", task_id)
             result = {
                 "task_id": task_id,

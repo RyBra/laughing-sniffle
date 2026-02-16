@@ -8,13 +8,18 @@ from concurrent import futures
 from datetime import datetime, timezone
 from pathlib import Path
 from queue import Full
+from typing import Any, cast
 
 import grpc
 import redis
 
-from proto import agent_pb2, agent_pb2_grpc
 from legacy.src.agent.dispatcher import dispatch_commands
 from legacy.src.agent.logging_setup import setup_logging
+from proto import agent_pb2, agent_pb2_grpc
+
+_agent_pb2 = cast(Any, agent_pb2)
+HealthResponse = _agent_pb2.HealthResponse
+RunResponse = _agent_pb2.RunResponse
 
 
 def _env_str(name: str, default: str) -> str:
@@ -74,10 +79,10 @@ class AgentGatewayServicer(agent_pb2_grpc.AgentGatewayServicer):
         self._task_queue_maxsize = task_queue_maxsize
         self._put_timeout_seconds = put_timeout_seconds
 
-    def Run(self, request: agent_pb2.RunRequest, context: grpc.ServicerContext) -> agent_pb2.RunResponse:
+    def Run(self, request: Any, context: grpc.ServicerContext) -> Any:
         commands_file = Path(request.commands_file)
         if not commands_file.exists():
-            return agent_pb2.RunResponse(ok=False, accepted=0, error="commands file not found")
+            return RunResponse(ok=False, accepted=0, error="commands file not found")
 
         queue_adapter = RedisTaskQueueAdapter(
             redis_client=self._redis,
@@ -91,18 +96,16 @@ class AgentGatewayServicer(agent_pb2_grpc.AgentGatewayServicer):
                 put_timeout_seconds=self._put_timeout_seconds,
             )
             logging.info("Run accepted %s commands from %s", accepted, commands_file)
-            return agent_pb2.RunResponse(ok=True, accepted=accepted, error="")
-        except Exception as exc:  # noqa: BLE001
+            return RunResponse(ok=True, accepted=accepted, error="")
+        except Exception as exc:
             logging.exception("Failed to dispatch commands from %s", commands_file)
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(str(exc))
-            return agent_pb2.RunResponse(ok=False, accepted=0, error=str(exc))
+            return RunResponse(ok=False, accepted=0, error=str(exc))
 
-    def Health(
-        self, request: agent_pb2.HealthRequest, context: grpc.ServicerContext
-    ) -> agent_pb2.HealthResponse:
+    def Health(self, request: Any, context: grpc.ServicerContext) -> Any:
         del request, context
-        return agent_pb2.HealthResponse(ok=True, service="agent-gateway")
+        return HealthResponse(ok=True, service="agent-gateway")
 
 
 def serve() -> None:

@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from typing import Dict
-
+import importlib
+from typing import Any
 
 REG_PATH = r"Software\Microsoft\Windows NT\CurrentVersion"
 
 
-def collect_windows_inventory() -> Dict[str, Dict[str, str]]:
+def collect_windows_inventory() -> dict[str, dict[str, str]]:
     """Collect OS details from Windows registry."""
     try:
-        import winreg
+        winreg = importlib.import_module("winreg")
     except ImportError as exc:
         raise RuntimeError("winreg is available only on Windows") from exc
 
@@ -32,7 +32,7 @@ def collect_windows_inventory() -> Dict[str, Dict[str, str]]:
     return {"os": fields}
 
 
-def _read_reg_string(winreg_module, key, name: str) -> str:
+def _read_reg_string(winreg_module: Any, key: Any, name: str) -> str:
     try:
         value, _ = winreg_module.QueryValueEx(key, name)
     except FileNotFoundError:

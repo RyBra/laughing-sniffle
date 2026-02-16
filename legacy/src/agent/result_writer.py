@@ -3,10 +3,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Dict
 
 
-def write_payload_atomic(payload_path: Path, payload: Dict[str, Dict[str, str]]) -> None:
+def write_payload_atomic(payload_path: Path, payload: dict[str, dict[str, str]]) -> None:
     """Write payload.json atomically to keep file consistent on failures."""
     payload_path.parent.mkdir(parents=True, exist_ok=True)
     with NamedTemporaryFile(

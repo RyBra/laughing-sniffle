@@ -4,7 +4,6 @@ import logging
 from pathlib import Path
 from queue import Full, Queue
 
-
 INVENTORY_COMMAND = "inventory"
 
 

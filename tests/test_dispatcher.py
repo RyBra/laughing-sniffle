@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from queue import Full, Queue
+from queue import Queue
 
 import pytest
 

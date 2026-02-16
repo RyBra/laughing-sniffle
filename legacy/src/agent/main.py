@@ -8,12 +8,11 @@ from queue import Empty, Full, Queue
 from threading import Thread
 from typing import Any
 
-from config import AppConfig, load_config
-from dispatcher import INVENTORY_COMMAND, dispatch_commands
-from inventory.windows_registry import collect_windows_inventory
-from logging_setup import setup_logging
-from result_writer import write_payload_atomic
-
+from legacy.src.agent.config import AppConfig, load_config
+from legacy.src.agent.dispatcher import INVENTORY_COMMAND, dispatch_commands
+from legacy.src.agent.inventory.windows_registry import collect_windows_inventory
+from legacy.src.agent.logging_setup import setup_logging
+from legacy.src.agent.result_writer import write_payload_atomic
 
 TASK_STOP = object()
 RESULT_STOP = object()
@@ -57,13 +56,13 @@ def inventory_worker(
                 continue
 
             try:
-                payload = collect_windows_inventory()
+                payload: dict[str, Any] = collect_windows_inventory()
                 if not payload["os"].get("DisplayVersion"):
                     logging.warning(
                         "Worker-%s: DisplayVersion missing; fallback value may be used",
                         worker_id,
                     )
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logging.exception("Worker-%s failed to collect inventory", worker_id)
                 payload = {"error": str(exc)}
 
@@ -101,7 +100,7 @@ def result_writer(
 
             write_payload_atomic(payload_path, result)
             logging.info("payload.json updated: %s", payload_path)
-        except Exception:  # noqa: BLE001
+        except Exception:
             logging.exception("ResultWriter failed to write payload")
         finally:
             result_queue.task_done()
@@ -120,7 +119,7 @@ def main() -> int:
     try:
         config = load_config(config_path)
         log_file = setup_logging(config.logging.log_path, config.logging.level)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"Failed to initialize app: {exc}", file=sys.stderr)
         return 1
 
@@ -156,7 +155,7 @@ def main() -> int:
             put_timeout_seconds=config.queue.put_timeout_seconds,
         )
         logging.info("Dispatch finished, accepted inventory commands: %s", accepted)
-    except Exception:  # noqa: BLE001
+    except Exception:
         logging.exception("Dispatcher failed")
         exit_code = 1
     finally:
