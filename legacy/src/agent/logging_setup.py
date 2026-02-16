@@ -28,7 +28,5 @@ def _parse_level(level_name: str) -> int:
         "error": logging.ERROR,
     }
     if normalized not in mapping:
-        raise ValueError(
-            "Invalid logging level. Allowed values: debug, info, warning, error."
-        )
+        raise ValueError("Invalid logging level. Allowed values: debug, info, warning, error.")
     return mapping[normalized]

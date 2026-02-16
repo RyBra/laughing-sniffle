@@ -39,14 +39,8 @@ def load_config(config_path: Path) -> AppConfig:
     parser.read(config_path, encoding="utf-8")
 
     log_level = parser.get("logging", "level", fallback="info").lower().strip()
-    log_dir_raw = Path(
-        parser.get("logging", "log_path", fallback=str(config_path.parent))
-    )
-    log_dir = (
-        log_dir_raw
-        if log_dir_raw.is_absolute()
-        else (config_path.parent / log_dir_raw).resolve()
-    )
+    log_dir_raw = Path(parser.get("logging", "log_path", fallback=str(config_path.parent)))
+    log_dir = log_dir_raw if log_dir_raw.is_absolute() else (config_path.parent / log_dir_raw).resolve()
 
     inventory_workers = parser.getint("workers", "InventoryWorkers", fallback=1)
     if inventory_workers < 1:
