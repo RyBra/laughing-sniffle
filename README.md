@@ -288,3 +288,94 @@ python legacy/src/agent/main.py --commands commands.txt
 - **Legacy** -- быстрое прототипирование, запуск на одном хосте, минимальная инфраструктура, простые сценарии с небольшим объемом задач.
 - **Микросервисы** -- продакшен с требованиями к масштабированию, отказоустойчивости, мониторингу и гибкому развертыванию (например, inventory-worker на Windows, остальное в облаке).
 
+---
+
+## Developer Experience (DevEx)
+
+В проекте настроен полный набор инструментов для удобной разработки и развёртывания.
+
+### Быстрый старт
+
+```bash
+make install            # создать venv + установить все зависимости (включая dev)
+source .venv/bin/activate
+pre-commit install      # установить git-хуки
+```
+
+### Makefile
+
+Все типовые команды собраны в `Makefile`. Список целей:
+
+```bash
+make help               # показать все доступные цели
+make up                 # docker compose up --build -d
+make down               # docker compose down
+make restart            # restart = down + up
+make logs               # docker compose logs -f
+make proto              # перегенерировать gRPC stubs из proto/agent.proto
+make lint               # ruff check .
+make fmt                # ruff format + fix
+make typecheck          # mypy services/ legacy/
+make test               # pytest -v
+make check              # lint + typecheck + test (все проверки разом)
+make clean              # удалить кеши и артефакты сборки
+```
+
+### Управление зависимостями
+
+- `pyproject.toml` -- единая точка конфигурации проекта (PEP 621): runtime-зависимости с пинами мажорных версий, dev-зависимости (ruff, mypy, pytest, pre-commit), настройки всех инструментов.
+- `requirements.txt` -- runtime-зависимости для Docker-сборки (пины совпадают с pyproject.toml).
+- `.env.example` -- документация всех переменных окружения с дефолтными значениями.
+
+### Линтинг, форматирование, type checking
+
+- **ruff** -- быстрый линтер + форматтер (заменяет flake8, isort, black). Конфигурация в `pyproject.toml`.
+- **mypy** -- статическая проверка типов. Особенно полезен для gRPC-кода.
+- **pre-commit** -- автоматический запуск ruff и базовых проверок (trailing whitespace, end-of-file, YAML/JSON валидация) перед каждым коммитом.
+
+### Тестирование
+
+Unit-тесты в `tests/` покрывают ключевые модули legacy-кода (не требуют Windows):
+
+- `test_dispatcher.py` -- `dispatch_commands()`: корректные и неизвестные команды, пустой файл, переполнение очереди, case-insensitivity.
+- `test_config.py` -- `load_config()`: валидный конфиг, отсутствие файла, невалидные значения, дефолты.
+- `test_result_writer.py` -- `write_payload_atomic()`: корректная запись, создание директорий, атомарность, формат.
+
+```bash
+make test               # или: pytest -v
+```
+
+### CI/CD (GitHub Actions)
+
+Файл `.github/workflows/ci.yml` запускается на каждый push/PR в `main`:
+
+1. **lint** -- `ruff check` + `ruff format --check`
+2. **typecheck** -- `mypy`
+3. **test** -- `pytest`
+
+Все три джоба запускаются параллельно на `ubuntu-latest` с Python 3.10.
+
+### Docker
+
+- **Multi-stage Dockerfiles** -- `builder` stage устанавливает зависимости, `runtime` stage копирует только site-packages и код. Уменьшает размер итоговых образов.
+- **Health checks в docker-compose.yml**:
+  - `redis` -- `redis-cli ping`
+  - `agent-gateway` -- gRPC Health endpoint
+  - `depends_on: condition: service_healthy` -- сервисы стартуют только когда Redis готов.
+- `.dockerignore` -- исключает `.git/`, `.venv/`, тесты, документацию из контекста сборки.
+
+### Dev Container
+
+`.devcontainer/devcontainer.json` позволяет запустить единое окружение разработки в VS Code, Cursor или GitHub Codespaces:
+
+- Python 3.10, Docker-in-Docker.
+- Автоматическая установка зависимостей и pre-commit хуков.
+- Рекомендованные расширения: ruff, mypy, proto3 syntax.
+- Проброс портов: 50051 (gRPC), 6379 (Redis).
+
+### Гигиена репозитория
+
+- `.gitignore` -- исключает `__pycache__/`, `.venv/`, `data/`, `logs/`, кеши инструментов.
+- `.dockerignore` -- минимизирует контекст Docker-сборки.
+- `.editorconfig` -- единый стиль отступов и кодировки (4 пробела для Python, 2 для YAML/JSON/proto, табы для Makefile).
+

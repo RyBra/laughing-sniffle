@@ -1,0 +1,79 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "windows-inventory-agent"
+version = "0.1.0"
+description = "Agent for collecting Windows OS inventory via microservices (gRPC + Redis) or legacy single-process mode."
+requires-python = ">=3.10"
+dependencies = [
+    "grpcio>=1.64,<2",
+    "protobuf>=5,<6",
+    "redis>=5,<6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "grpcio-tools>=1.64,<2",
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "pytest>=8",
+    "pre-commit>=4",
+    "types-redis>=4",
+]
+
+# ---------------------------------------------------------------------------
+# ruff
+# ---------------------------------------------------------------------------
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "RUF", # ruff-specific
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "RUF001", # cyrillic characters in comments
+    "RUF002",
+    "RUF003",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["legacy", "services", "proto"]
+
+# ---------------------------------------------------------------------------
+# mypy
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "proto.*",
+    "grpc",
+    "grpc._server",
+    "google.protobuf.*",
+]
+ignore_missing_imports = true
+
+# ---------------------------------------------------------------------------
+# pytest
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
